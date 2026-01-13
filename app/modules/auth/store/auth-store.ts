@@ -1,15 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { api } from "~/lib/api";
 
-interface User {
+export interface User {
+  id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
 }
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
-  login: (email: string) => void;
+  setAuth: (user: User, token: string) => void;
   logout: () => void;
 }
 
@@ -17,19 +21,29 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
-      login: (email: string) => {
+      setAuth: (user: User, token: string) => {
+        api.setToken(token);
         set({
-          user: { email, name: email.split("@")[0] },
+          user,
+          token,
           isAuthenticated: true,
         });
       },
       logout: () => {
-        set({ user: null, isAuthenticated: false });
+        api.setToken(null);
+        set({ user: null, token: null, isAuthenticated: false });
       },
     }),
     {
       name: "auth-storage",
+      onRehydrateStorage: () => (state) => {
+        // Restore token to API client after rehydration
+        if (state?.token) {
+          api.setToken(state.token);
+        }
+      },
     }
   )
 );

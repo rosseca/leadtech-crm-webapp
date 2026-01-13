@@ -21,8 +21,12 @@ export function Header() {
     navigate("/login");
   };
 
-  const initials = user?.name
-    ? user.name
+  const fullName = user
+    ? `${user.firstName} ${user.lastName}`.trim() || user.email
+    : "";
+
+  const initials = fullName
+    ? fullName
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -47,7 +51,7 @@ export function Header() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <div className="flex items-center justify-start gap-2 p-2">
             <div className="flex flex-col space-y-1 leading-none">
-              {user?.name && <p className="font-medium">{user.name}</p>}
+              {fullName && <p className="font-medium">{fullName}</p>}
               {user?.email && (
                 <p className="w-[200px] truncate text-sm text-muted-foreground">
                   {user.email}

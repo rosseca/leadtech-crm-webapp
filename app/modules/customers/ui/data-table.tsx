@@ -29,22 +29,16 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  isLoading?: boolean;
 }
 
-const subscriptionTypes = ["all", "free", "basic", "premium", "enterprise"];
-const subscriptionStatuses = [
-  "all",
-  "active",
-  "inactive",
-  "cancelled",
-  "pending",
-  "expired",
-];
-const pspStatuses = ["all", "connected", "disconnected", "pending", "error"];
+const loginMethods = ["all", "Google", "Facebook", "Apple", "Email"];
+const verifiedOptions = ["all", "true", "false"];
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -79,70 +73,47 @@ export function DataTable<TData, TValue>({
         />
         <Select
           value={
-            (table.getColumn("subscriptionType")?.getFilterValue() as string) ??
+            (table.getColumn("loginWith")?.getFilterValue() as string) ?? "all"
+          }
+          onValueChange={(value) =>
+            table
+              .getColumn("loginWith")
+              ?.setFilterValue(value === "all" ? undefined : value)
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Login Method" />
+          </SelectTrigger>
+          <SelectContent>
+            {loginMethods.map((method) => (
+              <SelectItem key={method} value={method}>
+                {method === "all" ? "All Methods" : method}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={
+            (table.getColumn("email_verified")?.getFilterValue() as string) ??
             "all"
           }
           onValueChange={(value) =>
             table
-              .getColumn("subscriptionType")
+              .getColumn("email_verified")
               ?.setFilterValue(value === "all" ? undefined : value)
           }
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Subscription Type" />
+            <SelectValue placeholder="Verified" />
           </SelectTrigger>
           <SelectContent>
-            {subscriptionTypes.map((type) => (
-              <SelectItem key={type} value={type}>
-                {type === "all" ? "All Types" : type.charAt(0).toUpperCase() + type.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={
-            (table
-              .getColumn("subscriptionStatus")
-              ?.getFilterValue() as string) ?? "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("subscriptionStatus")
-              ?.setFilterValue(value === "all" ? undefined : value)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Subscription Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {subscriptionStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status === "all"
-                  ? "All Statuses"
-                  : status.charAt(0).toUpperCase() + status.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={
-            (table.getColumn("pspStatus")?.getFilterValue() as string) ?? "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("pspStatus")
-              ?.setFilterValue(value === "all" ? undefined : value)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="PSP Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {pspStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status === "all"
-                  ? "All PSP Statuses"
-                  : status.charAt(0).toUpperCase() + status.slice(1)}
+            {verifiedOptions.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option === "all"
+                  ? "All"
+                  : option === "true"
+                    ? "Verified"
+                    : "Not Verified"}
               </SelectItem>
             ))}
           </SelectContent>
@@ -178,7 +149,16 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

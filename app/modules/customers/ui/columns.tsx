@@ -1,9 +1,10 @@
 import { type ColumnDef } from "@tanstack/react-table";
-import type { Customer, SubscriptionStatus, PSPStatus } from "./schema";
+import type { Customer, LoginWith } from "./schema";
 import { Badge } from "~/components/ui/badge";
 
-function formatDate(date: Date | undefined): string {
-  if (!date) return "-";
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
@@ -12,45 +13,34 @@ function formatDate(date: Date | undefined): string {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
-function getSubscriptionStatusVariant(
-  status: SubscriptionStatus
+function getLoginWithVariant(
+  loginWith: LoginWith
 ): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "active":
+  switch (loginWith) {
+    case "Google":
       return "default";
-    case "pending":
+    case "Apple":
       return "secondary";
-    case "inactive":
-    case "cancelled":
-    case "expired":
-      return "destructive";
+    case "Facebook":
+      return "outline";
+    case "Email":
     default:
       return "outline";
   }
 }
 
-function getPSPStatusVariant(
-  status: PSPStatus
+function getVerifiedVariant(
+  verified: boolean
 ): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "connected":
-      return "default";
-    case "pending":
-      return "secondary";
-    case "disconnected":
-    case "error":
-      return "destructive";
-    default:
-      return "outline";
-  }
+  return verified ? "default" : "destructive";
 }
 
 export const columns: ColumnDef<Customer>[] = [
   {
-    accessorKey: "customerId",
+    accessorKey: "id",
     header: "Customer ID",
     cell: ({ row }) => (
-      <span className="font-mono text-sm">{row.getValue("customerId")}</span>
+      <span className="font-mono text-sm">{row.getValue("id")}</span>
     ),
   },
   {
@@ -61,82 +51,67 @@ export const columns: ColumnDef<Customer>[] = [
     ),
   },
   {
-    accessorKey: "domain",
-    header: "Domain",
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => (
+      <span className="text-sm">{row.getValue("name") || "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "email_verified",
+    header: "Verified",
+    cell: ({ row }) => {
+      const verified = row.getValue("email_verified") as boolean;
+      return (
+        <Badge variant={getVerifiedVariant(verified)}>
+          {verified ? "Yes" : "No"}
+        </Badge>
+      );
+    },
+    filterFn: (row, id, value: string) => {
+      if (value === "all") return true;
+      const verified = row.getValue(id) as boolean;
+      return value === "true" ? verified : !verified;
+    },
+  },
+  {
+    accessorKey: "loginWith",
+    header: "Login Method",
+    cell: ({ row }) => {
+      const loginWith = row.getValue("loginWith") as LoginWith;
+      return (
+        <Badge variant={getLoginWithVariant(loginWith)} className="capitalize">
+          {loginWith}
+        </Badge>
+      );
+    },
+    filterFn: (row, id, value: string[]) => {
+      return value.includes(row.getValue(id));
+    },
+  },
+  {
+    accessorKey: "company_name",
+    header: "Company",
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">
-        {row.getValue("domain")}
+        {row.getValue("company_name") || "-"}
       </span>
     ),
   },
   {
-    accessorKey: "subscriptionType",
-    header: "Subscription Type",
-    cell: ({ row }) => {
-      const type = row.getValue("subscriptionType") as string;
-      return (
-        <Badge variant="outline" className="capitalize">
-          {type}
-        </Badge>
-      );
-    },
-    filterFn: (row, id, value: string[]) => {
-      return value.includes(row.getValue(id));
-    },
-  },
-  {
-    accessorKey: "subscriptionStatus",
-    header: "Subscription Status",
-    cell: ({ row }) => {
-      const status = row.getValue("subscriptionStatus") as SubscriptionStatus;
-      return (
-        <Badge variant={getSubscriptionStatusVariant(status)} className="capitalize">
-          {status}
-        </Badge>
-      );
-    },
-    filterFn: (row, id, value: string[]) => {
-      return value.includes(row.getValue(id));
-    },
-  },
-  {
-    accessorKey: "pspStatus",
-    header: "PSP Status",
-    cell: ({ row }) => {
-      const status = row.getValue("pspStatus") as PSPStatus;
-      return (
-        <Badge variant={getPSPStatusVariant(status)} className="capitalize">
-          {status}
-        </Badge>
-      );
-    },
-    filterFn: (row, id, value: string[]) => {
-      return value.includes(row.getValue(id));
-    },
-  },
-  {
-    accessorKey: "registrationDate",
-    header: "Registration Date",
-    cell: ({ row }) => (
-      <span className="text-sm">
-        {formatDate(row.getValue("registrationDate"))}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "subscriptionActivationDate",
-    header: "Subscription Activation Date",
-    cell: ({ row }) => (
-      <span className="text-sm">
-        {formatDate(row.getValue("subscriptionActivationDate"))}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "subscriptionId",
+    accessorKey: "subscription_id",
     header: "Subscription ID",
     cell: ({ row }) => (
-      <span className="font-mono text-sm">{row.getValue("subscriptionId")}</span>
+      <span className="font-mono text-sm">
+        {row.getValue("subscription_id") || "-"}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "created_at",
+    header: "Created At",
+    cell: ({ row }) => (
+      <span className="text-sm">{formatDate(row.getValue("created_at"))}</span>
     ),
   },
 ];

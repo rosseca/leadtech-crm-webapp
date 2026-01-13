@@ -1,40 +1,28 @@
 import * as v from "valibot";
 
-export const SubscriptionTypeSchema = v.picklist([
-  "free",
-  "basic",
-  "premium",
-  "enterprise",
-]);
-
-export const SubscriptionStatusSchema = v.picklist([
-  "active",
-  "inactive",
-  "cancelled",
-  "pending",
-  "expired",
-]);
-
-export const PSPStatusSchema = v.picklist([
-  "connected",
-  "disconnected",
-  "pending",
-  "error",
+export const LoginWithSchema = v.picklist([
+  "Google",
+  "Facebook",
+  "Apple",
+  "Email",
 ]);
 
 export const CustomerSchema = v.object({
-  customerId: v.string(),
+  id: v.string(),
   email: v.pipe(v.string(), v.email()),
-  domain: v.string(),
-  subscriptionType: SubscriptionTypeSchema,
-  subscriptionStatus: SubscriptionStatusSchema,
-  pspStatus: PSPStatusSchema,
-  registrationDate: v.date(),
-  subscriptionActivationDate: v.optional(v.date()),
-  subscriptionId: v.string(),
+  name: v.string(),
+  email_verified: v.boolean(),
+  loginWith: LoginWithSchema,
+  company_name: v.optional(v.string()),
+  address: v.optional(v.string()),
+  city: v.optional(v.string()),
+  state: v.optional(v.string()),
+  postal_code: v.optional(v.string()),
+  country: v.optional(v.nullable(v.string())),
+  subscription_id: v.optional(v.string()),
+  created_at: v.nullable(v.string()),
+  updated_at: v.nullable(v.string()),
 });
 
 export type Customer = v.InferOutput<typeof CustomerSchema>;
-export type SubscriptionType = v.InferOutput<typeof SubscriptionTypeSchema>;
-export type SubscriptionStatus = v.InferOutput<typeof SubscriptionStatusSchema>;
-export type PSPStatus = v.InferOutput<typeof PSPStatusSchema>;
+export type LoginWith = v.InferOutput<typeof LoginWithSchema>;

@@ -1,9 +1,15 @@
 import { type ColumnDef } from "@tanstack/react-table";
-import type { Transaction, TransactionStatus, TransactionType, PaymentMethod } from "./schema";
+import type {
+  Transaction,
+  TransactionStatus,
+  TransactionType,
+  PaymentType,
+} from "./schema";
 import { Badge } from "~/components/ui/badge";
 
-function formatDate(date: Date | undefined): string {
-  if (!date) return "-";
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
@@ -13,25 +19,27 @@ function formatDate(date: Date | undefined): string {
 }
 
 function formatCurrency(amount: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-  }).format(amount);
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).format(amount / 100); // Amount is typically in cents
+  } catch {
+    return `${currency} ${(amount / 100).toFixed(2)}`;
+  }
 }
 
 function getStatusVariant(
   status: TransactionStatus
 ): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case "completed":
+    case "success":
       return "default";
-    case "pending":
+    case "in_process":
+    case "waiting_user_interaction":
       return "secondary";
     case "failed":
-    case "cancelled":
       return "destructive";
-    case "refunded":
-      return "outline";
     default:
       return "outline";
   }
@@ -43,41 +51,57 @@ function getTypeVariant(
   switch (type) {
     case "payment":
       return "default";
-    case "subscription":
-      return "secondary";
     case "refund":
       return "destructive";
-    case "one-time":
+    case "chargeback":
+      return "destructive";
+    case "rdr":
       return "outline";
     default:
       return "outline";
   }
 }
 
-function formatPaymentMethod(method: PaymentMethod): string {
-  const methodLabels: Record<PaymentMethod, string> = {
-    credit_card: "Credit Card",
-    debit_card: "Debit Card",
-    bank_transfer: "Bank Transfer",
-    paypal: "PayPal",
-    crypto: "Crypto",
+function getPaymentTypeVariant(
+  type: PaymentType
+): "default" | "secondary" | "destructive" | "outline" {
+  switch (type) {
+    case "initial":
+      return "default";
+    case "recurring":
+      return "secondary";
+    case "upgrade":
+      return "outline";
+    default:
+      return "outline";
+  }
+}
+
+function formatStatus(status: TransactionStatus): string {
+  const labels: Record<TransactionStatus, string> = {
+    success: "Success",
+    failed: "Failed",
+    in_process: "In Process",
+    waiting_user_interaction: "Waiting",
   };
-  return methodLabels[method];
+  return labels[status] || status;
 }
 
 export const columns: ColumnDef<Transaction>[] = [
   {
-    accessorKey: "transactionId",
+    accessorKey: "id_transaction",
     header: "Transaction ID",
     cell: ({ row }) => (
-      <span className="font-mono text-sm">{row.getValue("transactionId")}</span>
+      <span className="font-mono text-sm">
+        {row.getValue("id_transaction")}
+      </span>
     ),
   },
   {
-    accessorKey: "customerEmail",
-    header: "Customer",
+    accessorKey: "customer_id",
+    header: "Customer ID",
     cell: ({ row }) => (
-      <span className="text-sm">{row.getValue("customerEmail")}</span>
+      <span className="font-mono text-sm">{row.getValue("customer_id")}</span>
     ),
   },
   {
@@ -89,7 +113,10 @@ export const columns: ColumnDef<Transaction>[] = [
       return (
         <span
           className={`text-sm font-medium ${
-            amount < 0 ? "text-destructive" : ""
+            row.original.transaction_type === "refund" ||
+            row.original.transaction_type === "chargeback"
+              ? "text-destructive"
+              : ""
           }`}
         >
           {formatCurrency(amount, currency)}
@@ -98,14 +125,12 @@ export const columns: ColumnDef<Transaction>[] = [
     },
   },
   {
-    accessorKey: "status",
+    accessorKey: "transaction_status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as TransactionStatus;
+      const status = row.getValue("transaction_status") as TransactionStatus;
       return (
-        <Badge variant={getStatusVariant(status)} className="capitalize">
-          {status}
-        </Badge>
+        <Badge variant={getStatusVariant(status)}>{formatStatus(status)}</Badge>
       );
     },
     filterFn: (row, id, value: string[]) => {
@@ -113,10 +138,10 @@ export const columns: ColumnDef<Transaction>[] = [
     },
   },
   {
-    accessorKey: "type",
+    accessorKey: "transaction_type",
     header: "Type",
     cell: ({ row }) => {
-      const type = row.getValue("type") as TransactionType;
+      const type = row.getValue("transaction_type") as TransactionType;
       return (
         <Badge variant={getTypeVariant(type)} className="capitalize">
           {type}
@@ -128,14 +153,14 @@ export const columns: ColumnDef<Transaction>[] = [
     },
   },
   {
-    accessorKey: "paymentMethod",
-    header: "Payment Method",
+    accessorKey: "payment_type",
+    header: "Payment Type",
     cell: ({ row }) => {
-      const method = row.getValue("paymentMethod") as PaymentMethod;
+      const type = row.getValue("payment_type") as PaymentType;
       return (
-        <span className="text-sm text-muted-foreground">
-          {formatPaymentMethod(method)}
-        </span>
+        <Badge variant={getPaymentTypeVariant(type)} className="capitalize">
+          {type}
+        </Badge>
       );
     },
     filterFn: (row, id, value: string[]) => {
@@ -143,26 +168,28 @@ export const columns: ColumnDef<Transaction>[] = [
     },
   },
   {
-    accessorKey: "description",
-    header: "Description",
+    accessorKey: "subscription_id",
+    header: "Subscription ID",
     cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground max-w-[200px] truncate block">
-        {row.getValue("description")}
+      <span className="font-mono text-sm">
+        {row.getValue("subscription_id") || "-"}
       </span>
     ),
   },
   {
-    accessorKey: "createdAt",
-    header: "Created",
+    accessorKey: "payment_date",
+    header: "Payment Date",
     cell: ({ row }) => (
-      <span className="text-sm">{formatDate(row.getValue("createdAt"))}</span>
+      <span className="text-sm">
+        {formatDate(row.getValue("payment_date"))}
+      </span>
     ),
   },
   {
-    accessorKey: "completedAt",
-    header: "Completed",
+    accessorKey: "created_at",
+    header: "Created",
     cell: ({ row }) => (
-      <span className="text-sm">{formatDate(row.getValue("completedAt"))}</span>
+      <span className="text-sm">{formatDate(row.getValue("created_at"))}</span>
     ),
   },
 ];

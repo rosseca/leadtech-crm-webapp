@@ -29,40 +29,33 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  isLoading?: boolean;
 }
 
 const transactionStatuses = [
   "all",
-  "completed",
-  "pending",
+  "success",
   "failed",
-  "refunded",
-  "cancelled",
+  "in_process",
+  "waiting_user_interaction",
 ];
 
-const transactionTypes = ["all", "payment", "refund", "subscription", "one-time"];
+const transactionTypes = ["all", "payment", "refund", "chargeback", "rdr"];
 
-const paymentMethods = [
-  "all",
-  "credit_card",
-  "debit_card",
-  "bank_transfer",
-  "paypal",
-  "crypto",
-];
+const paymentTypes = ["all", "initial", "recurring", "upgrade"];
 
-const paymentMethodLabels: Record<string, string> = {
-  all: "All Methods",
-  credit_card: "Credit Card",
-  debit_card: "Debit Card",
-  bank_transfer: "Bank Transfer",
-  paypal: "PayPal",
-  crypto: "Crypto",
+const statusLabels: Record<string, string> = {
+  all: "All Statuses",
+  success: "Success",
+  failed: "Failed",
+  in_process: "In Process",
+  waiting_user_interaction: "Waiting",
 };
 
 export function TransactionDataTable<TData, TValue>({
   columns,
   data,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -97,11 +90,13 @@ export function TransactionDataTable<TData, TValue>({
         />
         <Select
           value={
-            (table.getColumn("status")?.getFilterValue() as string) ?? "all"
+            (table
+              .getColumn("transaction_status")
+              ?.getFilterValue() as string) ?? "all"
           }
           onValueChange={(value) =>
             table
-              .getColumn("status")
+              .getColumn("transaction_status")
               ?.setFilterValue(value === "all" ? undefined : value)
           }
         >
@@ -111,20 +106,20 @@ export function TransactionDataTable<TData, TValue>({
           <SelectContent>
             {transactionStatuses.map((status) => (
               <SelectItem key={status} value={status}>
-                {status === "all"
-                  ? "All Statuses"
-                  : status.charAt(0).toUpperCase() + status.slice(1)}
+                {statusLabels[status] ||
+                  status.charAt(0).toUpperCase() + status.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select
           value={
-            (table.getColumn("type")?.getFilterValue() as string) ?? "all"
+            (table.getColumn("transaction_type")?.getFilterValue() as string) ??
+            "all"
           }
           onValueChange={(value) =>
             table
-              .getColumn("type")
+              .getColumn("transaction_type")
               ?.setFilterValue(value === "all" ? undefined : value)
           }
         >
@@ -143,22 +138,24 @@ export function TransactionDataTable<TData, TValue>({
         </Select>
         <Select
           value={
-            (table.getColumn("paymentMethod")?.getFilterValue() as string) ??
+            (table.getColumn("payment_type")?.getFilterValue() as string) ??
             "all"
           }
           onValueChange={(value) =>
             table
-              .getColumn("paymentMethod")
+              .getColumn("payment_type")
               ?.setFilterValue(value === "all" ? undefined : value)
           }
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Payment Method" />
+            <SelectValue placeholder="Payment Type" />
           </SelectTrigger>
           <SelectContent>
-            {paymentMethods.map((method) => (
-              <SelectItem key={method} value={method}>
-                {paymentMethodLabels[method]}
+            {paymentTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type === "all"
+                  ? "All Payment Types"
+                  : type.charAt(0).toUpperCase() + type.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -194,7 +191,16 @@ export function TransactionDataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
