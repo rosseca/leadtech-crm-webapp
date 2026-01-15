@@ -5,12 +5,27 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { getEnv, type Env } from "./lib/env.server";
+
+// Loader to pass runtime env vars to client
+export async function loader() {
+  return {
+    ENV: getEnv(),
+  };
+}
+
+declare global {
+  interface Window {
+    ENV: Env;
+  }
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -26,6 +41,8 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useLoaderData<typeof loader>();
+
   return (
     <html lang="en">
       <head>
@@ -37,6 +54,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <ScrollRestoration />
+        {/* Inject runtime env vars into window for client-side access */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data?.ENV || {})}`,
+          }}
+        />
         <Scripts />
       </body>
     </html>

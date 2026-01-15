@@ -1,4 +1,12 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// Get API URL from runtime env (set by server via window.ENV) or fallback to build-time/default
+function getApiUrl(): string {
+  // Server-side: use process.env directly
+  if (typeof window === "undefined") {
+    return process.env.API_URL || process.env.VITE_API_URL || "http://localhost:3000";
+  }
+  // Client-side: use window.ENV injected by root loader
+  return window.ENV?.API_URL || "http://localhost:3000";
+}
 
 interface ApiError {
   message: string;
@@ -6,11 +14,11 @@ interface ApiError {
 }
 
 class ApiClient {
-  private baseUrl: string;
   private token: string | null = null;
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+  // Resolve baseUrl lazily to ensure window.ENV is available on client
+  private get baseUrl(): string {
+    return getApiUrl();
   }
 
   setToken(token: string | null) {
@@ -67,7 +75,7 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(API_URL);
+export const api = new ApiClient();
 
 // Auth API
 export interface LoginRequest {
