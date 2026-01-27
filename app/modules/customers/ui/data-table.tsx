@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   pagination: PaginationInfo;
   onPageChange: (page: number) => void;
   onFiltersChange: (filters: Partial<CustomersListParams>) => void;
+  onRowClick?: (row: TData) => void;
 }
 
 const loginMethods = ["all", "Google", "Facebook", "Apple", "Email"];
@@ -50,6 +51,7 @@ export function DataTable<TData, TValue>({
   pagination,
   onPageChange,
   onFiltersChange,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [search, setSearch] = useState("");
   const [loginWith, setLoginWith] = useState("all");
@@ -172,6 +174,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

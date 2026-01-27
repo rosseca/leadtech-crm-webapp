@@ -10,7 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { authApi } from "~/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { authApi, type UserRole } from "~/lib/api";
 import { UserPlus, CheckCircle2 } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
@@ -25,6 +32,7 @@ export default function InviteUsers() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState<UserRole>("customer_service");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,13 +49,15 @@ export default function InviteUsers() {
         password,
         firstName,
         lastName: lastName || undefined,
+        role,
       });
-      setSuccess(`Successfully invited ${response.user.email}`);
+      setSuccess(`Successfully invited ${response.user.email} as ${response.user.role}`);
       // Reset form
       setEmail("");
       setPassword("");
       setFirstName("");
       setLastName("");
+      setRole("customer_service");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to invite user");
     } finally {
@@ -138,6 +148,25 @@ export default function InviteUsers() {
               />
               <p className="text-xs text-muted-foreground">
                 Password must be at least 8 characters long.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select
+                value={role}
+                onValueChange={(value: UserRole) => setRole(value)}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="customer_service">Customer Service</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Admin users have full access including inviting other users.
               </p>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>

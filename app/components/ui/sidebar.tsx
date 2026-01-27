@@ -280,6 +280,36 @@ function SidebarTrigger({
   );
 }
 
+function SidebarFloatingTrigger({
+  className,
+  onClick,
+  ...props
+}: React.ComponentProps<typeof Button>) {
+  const { toggleSidebar, state } = useSidebar();
+
+  return (
+    <Button
+      data-sidebar="floating-trigger"
+      data-slot="sidebar-floating-trigger"
+      variant="outline"
+      size="icon"
+      className={cn(
+        "fixed bottom-4 left-4 z-50 h-12 w-12 rounded-full shadow-lg bg-background hover:bg-accent transition-all duration-200",
+        state === "expanded" && "md:left-[calc(var(--sidebar-width)+1rem)]",
+        className
+      )}
+      onClick={(event) => {
+        onClick?.(event);
+        toggleSidebar();
+      }}
+      {...props}
+    >
+      <PanelLeftIcon className="h-5 w-5" />
+      <span className="sr-only">Toggle Sidebar</span>
+    </Button>
+  );
+}
+
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar();
 
@@ -702,6 +732,7 @@ function SidebarMenuSubButton({
 export {
   Sidebar,
   SidebarContent,
+  SidebarFloatingTrigger,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupAction,

@@ -6,6 +6,7 @@ import { useCustomers } from "../hooks/use-customers";
 import type { Customer } from "../ui/schema";
 import type { CustomersListParams } from "~/lib/api";
 import { ApiErrorAlert } from "~/components/ui/api-error-alert";
+import { CustomerDetailModal } from "../ui/customer-detail-modal";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -21,6 +22,8 @@ export default function Customers() {
     page: 1,
     limit: PAGE_SIZE,
   });
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data, isLoading, error, refetch } = useCustomers(params);
 
@@ -44,6 +47,18 @@ export default function Customers() {
     refetch();
   }, [refetch]);
 
+  const handleRowClick = useCallback((customer: Customer) => {
+    setSelectedCustomerId(customer.id);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleModalClose = useCallback((open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      setSelectedCustomerId(null);
+    }
+  }, []);
+
   return (
     <div className="py-4">
       <div className="mb-4">
@@ -60,6 +75,12 @@ export default function Customers() {
         pagination={pagination}
         onPageChange={handlePageChange}
         onFiltersChange={handleFiltersChange}
+        onRowClick={handleRowClick}
+      />
+      <CustomerDetailModal
+        customerId={selectedCustomerId}
+        open={isModalOpen}
+        onOpenChange={handleModalClose}
       />
     </div>
   );

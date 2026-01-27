@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { api } from "~/lib/api";
+import { api, type UserRole } from "~/lib/api";
 
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  role: UserRole;
 }
 
 interface AuthState {

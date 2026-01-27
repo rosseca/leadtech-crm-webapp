@@ -177,6 +177,8 @@ class ApiClient {
 export const api = new ApiClient();
 
 // Auth API
+export type UserRole = 'admin' | 'customer_service';
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -198,6 +200,7 @@ export interface AuthResponse {
     email: string;
     firstName: string;
     lastName: string;
+    role: UserRole;
   };
 }
 
@@ -209,6 +212,7 @@ export interface InviteUserRequest {
   password: string;
   firstName: string;
   lastName?: string;
+  role: UserRole;
 }
 
 export interface InviteUserResponse {
@@ -218,6 +222,7 @@ export interface InviteUserResponse {
     email: string;
     firstName: string;
     lastName: string;
+    role: UserRole;
   };
 }
 
@@ -271,6 +276,45 @@ export interface CustomersListParams {
   sortOrder?: "asc" | "desc";
 }
 
+// User with transactions response
+export interface UserTransaction {
+  id: string;
+  id_transaction: string;
+  transaction_type: string;
+  transaction_status: string;
+  amount: number;
+  currency: string;
+  payment_type: string;
+  payment_date: string | null;
+  created_at: string | null;
+  subscription_id: string;
+  can_refund: boolean;
+  refund_status: string;
+}
+
+export interface UserTransactionsSummary {
+  total_transactions: number;
+  successful_payments: number;
+  failed_payments: number;
+  refunds: number;
+  total_amount_paid: number;
+  total_refunded: number;
+}
+
+export interface UserWithTransactions {
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    company_name?: string;
+    language?: string;
+    created_at: string | null;
+    subscription_status?: string;
+  };
+  transactions: UserTransaction[];
+  summary: UserTransactionsSummary;
+}
+
 export const customersApi = {
   getList: (params: CustomersListParams = {}) => {
     const searchParams = new URLSearchParams();
@@ -290,6 +334,8 @@ export const customersApi = {
     );
   },
   getById: (id: string) => api.get<Customer>(`/users/${id}`),
+  getWithTransactions: (id: string) =>
+    api.get<UserWithTransactions>(`/users/${id}/transactions`),
 };
 
 // Transactions API
@@ -349,4 +395,60 @@ export const transactionsApi = {
     );
   },
   getById: (id: string) => api.get<Transaction>(`/transactions/${id}`),
+};
+
+// Refunds API
+export interface RefundRequest {
+  chargeId: string;
+  amount?: number;
+  reason?: "duplicate" | "fraudulent" | "requested_by_customer";
+}
+
+export interface RefundResult {
+  id: string;
+  status: string;
+  amount: number;
+  currency: string;
+  created: number;
+  reason: string | null;
+}
+
+export interface RefundResponse {
+  success: boolean;
+  message: string;
+  data: {
+    refund: RefundResult;
+    original_transaction: {
+      id: string;
+      id_transaction: string;
+      amount: number;
+      currency: string;
+    };
+  };
+}
+
+export const refundsApi = {
+  create: (data: RefundRequest) => api.post<RefundResponse>("/refunds", data),
+};
+
+// Notes API
+export interface CustomerNote {
+  id: string;
+  customer_id: string;
+  content: string;
+  author?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateNoteRequest {
+  content: string;
+  author?: string;
+}
+
+export const notesApi = {
+  getByCustomerId: (customerId: string) =>
+    api.get<CustomerNote[]>(`/notes/${customerId}`),
+  create: (customerId: string, data: CreateNoteRequest) =>
+    api.post<CustomerNote>(`/notes/${customerId}`, data),
 };

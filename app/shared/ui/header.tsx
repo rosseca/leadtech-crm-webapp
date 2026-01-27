@@ -9,7 +9,6 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { SidebarTrigger } from "~/components/ui/sidebar";
 import { useAuthStore } from "~/modules/auth";
 
 export function Header() {
@@ -35,9 +34,12 @@ export function Header() {
     : "U";
 
   return (
-    <header className="sticky top-0 z-50 flex h-[65px] items-center gap-4 border-b bg-background px-2">
-      <SidebarTrigger />
-      <div className="flex-1" />
+    <header className="sticky top-0 z-50 flex h-[65px] items-center gap-4 border-b bg-background px-4">
+      <div className="flex-1 flex w-auto">
+        <div className="bg-black pt-2 pb-1  px-4">
+          <img src="./logo.svg" />
+        </div>
+      </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -57,15 +59,6 @@ export function Header() {
               )}
             </div>
           </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />

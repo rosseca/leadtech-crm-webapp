@@ -11,33 +11,47 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
+import { usePermissions } from "~/hooks/use-permissions";
+import type { Permission } from "~/lib/permissions";
 
-const menuItems = [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  permission?: Permission;
+}
+
+const menuItems: MenuItem[] = [
   {
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+    permission: "view_dashboard",
   },
   {
     title: "Customers",
     url: "/customers",
     icon: Users,
+    permission: "view_customers",
   },
   {
     title: "Transactions",
     url: "/transactions",
     icon: CreditCard,
+    permission: "view_transactions",
   },
   {
     title: "Invite Users",
     url: "/invite",
     icon: UserPlus,
+    permission: "invite_users",
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
+  const { can } = usePermissions();
 
   const handleItemClick = () => {
     if (isMobile) {
@@ -46,6 +60,11 @@ export function AppSidebar() {
       setOpen(false);
     }
   };
+
+  // Filter menu items based on permissions
+  const visibleMenuItems = menuItems.filter(
+    (item) => !item.permission || can(item.permission)
+  );
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -63,7 +82,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
