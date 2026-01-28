@@ -255,6 +255,19 @@ export interface Customer {
   subscription_id?: string;
   created_at: string | null;
   updated_at: string | null;
+  // New fields
+  customer_id_np?: string;
+  status?: string;
+  unsubscribed_date?: string | null;
+  renewal_date?: string | null;
+  retries?: number;
+  first_transaction_date?: string | null;
+  user_type?: "free" | "pro";
+  subscription_status?: "Active" | "Unsubscribed" | "Paying" | "Non renewal";
+  subscription_type?: "1" | "3" | "12";
+  language_communication?: string;
+  language_registration?: string;
+  provider?: "stripe" | "macropay";
 }
 
 export interface PaginatedResponse<T> {
@@ -270,8 +283,12 @@ export interface CustomersListParams {
   limit?: number;
   search?: string;
   email?: string;
+  name?: string;
   email_verified?: boolean;
   loginWith?: string;
+  user_type?: string;
+  subscription_status?: string;
+  subscription_type?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
@@ -322,9 +339,15 @@ export const customersApi = {
     if (params.limit) searchParams.append("limit", params.limit.toString());
     if (params.search) searchParams.append("search", params.search);
     if (params.email) searchParams.append("email", params.email);
+    if (params.name) searchParams.append("name", params.name);
     if (params.email_verified !== undefined)
       searchParams.append("email_verified", params.email_verified.toString());
     if (params.loginWith) searchParams.append("loginWith", params.loginWith);
+    if (params.user_type) searchParams.append("user_type", params.user_type);
+    if (params.subscription_status)
+      searchParams.append("subscription_status", params.subscription_status);
+    if (params.subscription_type)
+      searchParams.append("subscription_type", params.subscription_type);
     if (params.sortBy) searchParams.append("sortBy", params.sortBy);
     if (params.sortOrder) searchParams.append("sortOrder", params.sortOrder);
 
@@ -352,12 +375,31 @@ export interface Transaction {
   payment_date: string | null;
   created_at: string | null;
   updated_at: string | null;
+  // New fields
+  email?: string;
+  subscription_plan?: "1" | "3" | "12";
+  subscription_status?: string;
+  country?: string;
+  provider?: "stripe" | "macropay";
+  normalized_card_brand?: string;
+  card_holder_name?: string;
+  bin?: string;
+  last_4?: string;
+  next_transaction_date?: string | null;
+  refund_date?: string | null;
+  id_order?: string;
 }
 
 export interface TransactionsListParams {
   page?: number;
   limit?: number;
   search?: string;
+  email?: string;
+  id_transaction?: string;
+  order_number?: string;
+  bin?: string;
+  last_4?: string;
+  card_holder_name?: string;
   customer_id?: string;
   subscription_id?: string;
   transaction_type?: string;
@@ -377,6 +419,12 @@ export const transactionsApi = {
     if (params.page) searchParams.append("page", params.page.toString());
     if (params.limit) searchParams.append("limit", params.limit.toString());
     if (params.search) searchParams.append("search", params.search);
+    if (params.email) searchParams.append("email", params.email);
+    if (params.id_transaction) searchParams.append("id_transaction", params.id_transaction);
+    if (params.order_number) searchParams.append("order_number", params.order_number);
+    if (params.bin) searchParams.append("bin", params.bin);
+    if (params.last_4) searchParams.append("last_4", params.last_4);
+    if (params.card_holder_name) searchParams.append("card_holder_name", params.card_holder_name);
     if (params.customer_id) searchParams.append("customer_id", params.customer_id);
     if (params.subscription_id) searchParams.append("subscription_id", params.subscription_id);
     if (params.transaction_type) searchParams.append("transaction_type", params.transaction_type);

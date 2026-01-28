@@ -42,7 +42,9 @@ interface DataTableProps<TData, TValue> {
 }
 
 const loginMethods = ["all", "Google", "Facebook", "Apple", "Email"];
-const verifiedOptions = ["all", "true", "false"];
+const userTypes = ["all", "free", "pro"];
+const subscriptionStatuses = ["all", "Active", "Unsubscribed", "Paying", "Non renewal"];
+const subscriptionTypes = ["all", "1", "3", "12"];
 
 export function DataTable<TData, TValue>({
   columns,
@@ -53,42 +55,77 @@ export function DataTable<TData, TValue>({
   onFiltersChange,
   onRowClick,
 }: DataTableProps<TData, TValue>) {
-  const [search, setSearch] = useState("");
+  const [emailSearch, setEmailSearch] = useState("");
+  const [nameSearch, setNameSearch] = useState("");
   const [loginWith, setLoginWith] = useState("all");
-  const [emailVerified, setEmailVerified] = useState("all");
+  const [userType, setUserType] = useState("all");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("all");
+  const [subscriptionType, setSubscriptionType] = useState("all");
 
-  // Debounce search input
+  // Debounce email search input
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      onFiltersChange({ search: search || undefined });
+      onFiltersChange({ email: emailSearch || undefined });
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [search, onFiltersChange]);
+  }, [emailSearch, onFiltersChange]);
+
+  // Debounce name search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onFiltersChange({ name: nameSearch || undefined });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [nameSearch, onFiltersChange]);
 
   const handleLoginWithChange = (value: string) => {
     setLoginWith(value);
     onFiltersChange({ loginWith: value === "all" ? undefined : value });
   };
 
-  const handleEmailVerifiedChange = (value: string) => {
-    setEmailVerified(value);
+  const handleUserTypeChange = (value: string) => {
+    setUserType(value);
+    onFiltersChange({ user_type: value === "all" ? undefined : value });
+  };
+
+  const handleSubscriptionStatusChange = (value: string) => {
+    setSubscriptionStatus(value);
     onFiltersChange({
-      email_verified: value === "all" ? undefined : value === "true",
+      subscription_status: value === "all" ? undefined : value,
+    });
+  };
+
+  const handleSubscriptionTypeChange = (value: string) => {
+    setSubscriptionType(value);
+    onFiltersChange({
+      subscription_type: value === "all" ? undefined : value,
     });
   };
 
   const handleClearFilters = () => {
-    setSearch("");
+    setEmailSearch("");
+    setNameSearch("");
     setLoginWith("all");
-    setEmailVerified("all");
+    setUserType("all");
+    setSubscriptionStatus("all");
+    setSubscriptionType("all");
     onFiltersChange({
-      search: undefined,
+      email: undefined,
+      name: undefined,
       loginWith: undefined,
-      email_verified: undefined,
+      user_type: undefined,
+      subscription_status: undefined,
+      subscription_type: undefined,
     });
   };
 
-  const hasFilters = search || loginWith !== "all" || emailVerified !== "all";
+  const hasFilters =
+    emailSearch ||
+    nameSearch ||
+    loginWith !== "all" ||
+    userType !== "all" ||
+    subscriptionStatus !== "all" ||
+    subscriptionType !== "all";
 
   const table = useReactTable({
     data,
@@ -100,15 +137,21 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <Input
-          placeholder="Search by name, email, or company..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="max-w-sm"
+          placeholder="Email..."
+          value={emailSearch}
+          onChange={(event) => setEmailSearch(event.target.value)}
+          className="w-[160px]"
+        />
+        <Input
+          placeholder="Name..."
+          value={nameSearch}
+          onChange={(event) => setNameSearch(event.target.value)}
+          className="w-[140px]"
         />
         <Select value={loginWith} onValueChange={handleLoginWithChange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[130px]">
             <SelectValue placeholder="Login Method" />
           </SelectTrigger>
           <SelectContent>
@@ -119,29 +162,57 @@ export function DataTable<TData, TValue>({
             ))}
           </SelectContent>
         </Select>
-        <Select value={emailVerified} onValueChange={handleEmailVerifiedChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Verified" />
+        <Select value={userType} onValueChange={handleUserTypeChange}>
+          <SelectTrigger className="w-[110px]">
+            <SelectValue placeholder="User Type" />
           </SelectTrigger>
           <SelectContent>
-            {verifiedOptions.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option === "all"
-                  ? "All"
-                  : option === "true"
-                    ? "Verified"
-                    : "Not Verified"}
+            {userTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type === "all" ? "All Types" : type === "free" ? "Free" : "Pro"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={subscriptionStatus}
+          onValueChange={handleSubscriptionStatusChange}
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Sub Status" />
+          </SelectTrigger>
+          <SelectContent>
+            {subscriptionStatuses.map((status) => (
+              <SelectItem key={status} value={status}>
+                {status === "all" ? "All Statuses" : status}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={subscriptionType}
+          onValueChange={handleSubscriptionTypeChange}
+        >
+          <SelectTrigger className="w-[130px]">
+            <SelectValue placeholder="Sub Type" />
+          </SelectTrigger>
+          <SelectContent>
+            {subscriptionTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type === "all"
+                  ? "All Plans"
+                  : `${type} ${type === "1" ? "month" : "months"}`}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         {hasFilters && (
-          <Button variant="outline" onClick={handleClearFilters}>
-            Clear Filters
+          <Button variant="outline" size="sm" onClick={handleClearFilters}>
+            Clear
           </Button>
         )}
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

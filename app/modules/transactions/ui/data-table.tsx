@@ -50,7 +50,7 @@ const transactionStatuses = [
 
 const transactionTypes = ["all", "payment", "refund", "chargeback", "rdr"];
 
-const paymentTypes = ["all", "initial", "recurring", "upgrade"];
+const currencies = ["all", "EUR", "USD", "GBP"];
 
 const statusLabels: Record<string, string> = {
   all: "All Statuses",
@@ -68,20 +68,65 @@ export function TransactionDataTable<TData, TValue>({
   onPageChange,
   onFiltersChange,
 }: DataTableProps<TData, TValue>) {
-  const [search, setSearch] = useState("");
+  const [emailSearch, setEmailSearch] = useState("");
+  const [transactionIdSearch, setTransactionIdSearch] = useState("");
+  const [orderNumberSearch, setOrderNumberSearch] = useState("");
+  const [binSearch, setBinSearch] = useState("");
+  const [last4Search, setLast4Search] = useState("");
+  const [cardHolderSearch, setCardHolderSearch] = useState("");
   const [transactionStatus, setTransactionStatus] = useState("all");
   const [transactionType, setTransactionType] = useState("all");
-  const [paymentType, setPaymentType] = useState("all");
+  const [currency, setCurrency] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  // Debounce search input
+  // Debounce email search input
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      onFiltersChange({ search: search || undefined });
+      onFiltersChange({ email: emailSearch || undefined });
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [search, onFiltersChange]);
+  }, [emailSearch, onFiltersChange]);
+
+  // Debounce transaction ID search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onFiltersChange({ id_transaction: transactionIdSearch || undefined });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [transactionIdSearch, onFiltersChange]);
+
+  // Debounce order number search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onFiltersChange({ order_number: orderNumberSearch || undefined });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [orderNumberSearch, onFiltersChange]);
+
+  // Debounce BIN search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onFiltersChange({ bin: binSearch || undefined });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [binSearch, onFiltersChange]);
+
+  // Debounce last 4 digits search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onFiltersChange({ last_4: last4Search || undefined });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [last4Search, onFiltersChange]);
+
+  // Debounce card holder name search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onFiltersChange({ card_holder_name: cardHolderSearch || undefined });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [cardHolderSearch, onFiltersChange]);
 
   const handleTransactionStatusChange = (value: string) => {
     setTransactionStatus(value);
@@ -97,10 +142,10 @@ export function TransactionDataTable<TData, TValue>({
     });
   };
 
-  const handlePaymentTypeChange = (value: string) => {
-    setPaymentType(value);
+  const handleCurrencyChange = (value: string) => {
+    setCurrency(value);
     onFiltersChange({
-      payment_type: value === "all" ? undefined : value,
+      currency: value === "all" ? undefined : value,
     });
   };
 
@@ -121,27 +166,42 @@ export function TransactionDataTable<TData, TValue>({
   };
 
   const handleClearFilters = () => {
-    setSearch("");
+    setEmailSearch("");
+    setTransactionIdSearch("");
+    setOrderNumberSearch("");
+    setBinSearch("");
+    setLast4Search("");
+    setCardHolderSearch("");
     setTransactionStatus("all");
     setTransactionType("all");
-    setPaymentType("all");
+    setCurrency("all");
     setDateFrom("");
     setDateTo("");
     onFiltersChange({
-      search: undefined,
+      email: undefined,
+      id_transaction: undefined,
+      order_number: undefined,
+      bin: undefined,
+      last_4: undefined,
+      card_holder_name: undefined,
       transaction_status: undefined,
       transaction_type: undefined,
-      payment_type: undefined,
+      currency: undefined,
       date_from: undefined,
       date_to: undefined,
     });
   };
 
   const hasFilters =
-    search ||
+    emailSearch ||
+    transactionIdSearch ||
+    orderNumberSearch ||
+    binSearch ||
+    last4Search ||
+    cardHolderSearch ||
     transactionStatus !== "all" ||
     transactionType !== "all" ||
-    paymentType !== "all" ||
+    currency !== "all" ||
     dateFrom ||
     dateTo;
 
@@ -155,18 +215,48 @@ export function TransactionDataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <Input
-          placeholder="Search by ID, customer, subscription..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="max-w-sm"
+          placeholder="Email..."
+          value={emailSearch}
+          onChange={(event) => setEmailSearch(event.target.value)}
+          className="w-[140px]"
+        />
+        <Input
+          placeholder="Transaction ID..."
+          value={transactionIdSearch}
+          onChange={(event) => setTransactionIdSearch(event.target.value)}
+          className="w-[130px]"
+        />
+        <Input
+          placeholder="Order #..."
+          value={orderNumberSearch}
+          onChange={(event) => setOrderNumberSearch(event.target.value)}
+          className="w-[110px]"
+        />
+        <Input
+          placeholder="BIN..."
+          value={binSearch}
+          onChange={(event) => setBinSearch(event.target.value)}
+          className="w-[80px]"
+        />
+        <Input
+          placeholder="Last 4..."
+          value={last4Search}
+          onChange={(event) => setLast4Search(event.target.value)}
+          className="w-[80px]"
+        />
+        <Input
+          placeholder="Card Holder..."
+          value={cardHolderSearch}
+          onChange={(event) => setCardHolderSearch(event.target.value)}
+          className="w-[120px]"
         />
         <Select
           value={transactionStatus}
           onValueChange={handleTransactionStatusChange}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[130px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -182,7 +272,7 @@ export function TransactionDataTable<TData, TValue>({
           value={transactionType}
           onValueChange={handleTransactionTypeChange}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
@@ -195,47 +285,43 @@ export function TransactionDataTable<TData, TValue>({
             ))}
           </SelectContent>
         </Select>
-        <Select value={paymentType} onValueChange={handlePaymentTypeChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Payment Type" />
+        <Select value={currency} onValueChange={handleCurrencyChange}>
+          <SelectTrigger className="w-[110px]">
+            <SelectValue placeholder="Currency" />
           </SelectTrigger>
           <SelectContent>
-            {paymentTypes.map((type) => (
-              <SelectItem key={type} value={type}>
-                {type === "all"
-                  ? "All Payment Types"
-                  : type.charAt(0).toUpperCase() + type.slice(1)}
+            {currencies.map((curr) => (
+              <SelectItem key={curr} value={curr}>
+                {curr === "all" ? "All Currencies" : curr}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </div>
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">From:</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground">From:</span>
           <Input
             type="date"
             value={dateFrom}
             onChange={handleDateFromChange}
-            className="w-[160px]"
+            className="w-[130px]"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">To:</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground">To:</span>
           <Input
             type="date"
             value={dateTo}
             onChange={handleDateToChange}
-            className="w-[160px]"
+            className="w-[130px]"
           />
         </div>
         {hasFilters && (
-          <Button variant="outline" onClick={handleClearFilters}>
-            Clear Filters
+          <Button variant="outline" size="sm" onClick={handleClearFilters}>
+            Clear
           </Button>
         )}
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

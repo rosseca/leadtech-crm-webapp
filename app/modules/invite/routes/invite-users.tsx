@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { authApi, type UserRole } from "~/lib/api";
-import { UserPlus, CheckCircle2 } from "lucide-react";
+import { UserPlus, CheckCircle2, Loader2 } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -66,15 +66,16 @@ export default function InviteUsers() {
   };
 
   return (
-    <div className="py-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Invite Users</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Invite new team members to join LeadtechCRM.
-        </p>
-      </div>
+    <div className="py-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
+      <div className="w-full max-w-lg">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold tracking-tight">Invite Users</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Invite new team members to join LeadtechCRM.
+          </p>
+        </div>
 
-      <Card className="max-w-lg">
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
@@ -170,11 +171,19 @@ export default function InviteUsers() {
               </p>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending Invitation..." : "Send Invitation"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending Invitation...
+                </>
+              ) : (
+                "Send Invitation"
+              )}
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

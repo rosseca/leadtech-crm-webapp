@@ -4,6 +4,8 @@ import type {
   TransactionStatus,
   TransactionType,
   PaymentType,
+  SubscriptionPlan,
+  Provider,
 } from "./schema";
 import { Badge } from "~/components/ui/badge";
 
@@ -16,6 +18,15 @@ function formatDate(dateStr: string | null | undefined): string {
   const hours = date.getHours().toString().padStart(2, "0");
   const minutes = date.getMinutes().toString().padStart(2, "0");
   return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+function formatDateOnly(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -77,6 +88,17 @@ function getPaymentTypeVariant(
   }
 }
 
+function getProviderVariant(
+  provider: Provider | undefined
+): "default" | "secondary" | "destructive" | "outline" {
+  return provider === "stripe" ? "default" : "secondary";
+}
+
+function formatProvider(provider: Provider | undefined): string {
+  if (!provider) return "-";
+  return provider === "stripe" ? "Stripe" : "Macropay";
+}
+
 function formatStatus(status: TransactionStatus): string {
   const labels: Record<TransactionStatus, string> = {
     success: "Success",
@@ -89,6 +111,13 @@ function formatStatus(status: TransactionStatus): string {
 
 export const columns: ColumnDef<Transaction>[] = [
   {
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => (
+      <span className="text-sm">{row.getValue("email") || "-"}</span>
+    ),
+  },
+  {
     accessorKey: "id_transaction",
     header: "Transaction ID",
     cell: ({ row }) => (
@@ -98,11 +127,62 @@ export const columns: ColumnDef<Transaction>[] = [
     ),
   },
   {
-    accessorKey: "customer_id",
-    header: "Customer ID",
+    accessorKey: "subscription_id",
+    header: "Subscription ID",
     cell: ({ row }) => (
-      <span className="font-mono text-sm">{row.getValue("customer_id")}</span>
+      <span className="font-mono text-sm">
+        {row.getValue("subscription_id") || "-"}
+      </span>
     ),
+  },
+  {
+    accessorKey: "subscription_plan",
+    header: "Subscription Plan",
+    cell: ({ row }) => {
+      const plan = row.getValue("subscription_plan") as SubscriptionPlan | undefined;
+      if (!plan) return <span className="text-sm text-muted-foreground">-</span>;
+      return (
+        <span className="text-sm">
+          {plan} {plan === "1" ? "month" : "months"}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: "subscription_status",
+    header: "Subscription Status",
+    cell: ({ row }) => (
+      <span className="text-sm">{row.getValue("subscription_status") || "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "created_at",
+    header: "Created At",
+    cell: ({ row }) => (
+      <span className="text-sm">{formatDate(row.getValue("created_at"))}</span>
+    ),
+  },
+  {
+    accessorKey: "transaction_type",
+    header: "Transaction Type",
+    cell: ({ row }) => {
+      const type = row.getValue("transaction_type") as TransactionType;
+      return (
+        <Badge variant={getTypeVariant(type)} className="capitalize">
+          {type}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "transaction_status",
+    header: "Transaction Status",
+    cell: ({ row }) => {
+      const status = row.getValue("transaction_status") as TransactionStatus;
+      return (
+        <Badge variant={getStatusVariant(status)}>{formatStatus(status)}</Badge>
+      );
+    },
   },
   {
     accessorKey: "amount",
@@ -125,31 +205,30 @@ export const columns: ColumnDef<Transaction>[] = [
     },
   },
   {
-    accessorKey: "transaction_status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("transaction_status") as TransactionStatus;
-      return (
-        <Badge variant={getStatusVariant(status)}>{formatStatus(status)}</Badge>
-      );
-    },
-    filterFn: (row, id, value: string[]) => {
-      return value.includes(row.getValue(id));
-    },
+    accessorKey: "currency",
+    header: "Currency",
+    cell: ({ row }) => (
+      <span className="text-sm">{row.getValue("currency")}</span>
+    ),
   },
   {
-    accessorKey: "transaction_type",
-    header: "Type",
+    accessorKey: "country",
+    header: "Country",
+    cell: ({ row }) => (
+      <span className="text-sm">{row.getValue("country") || "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "provider",
+    header: "Provider",
     cell: ({ row }) => {
-      const type = row.getValue("transaction_type") as TransactionType;
+      const provider = row.getValue("provider") as Provider | undefined;
+      if (!provider) return <span className="text-sm text-muted-foreground">-</span>;
       return (
-        <Badge variant={getTypeVariant(type)} className="capitalize">
-          {type}
+        <Badge variant={getProviderVariant(provider)}>
+          {formatProvider(provider)}
         </Badge>
       );
-    },
-    filterFn: (row, id, value: string[]) => {
-      return value.includes(row.getValue(id));
     },
   },
   {
@@ -163,17 +242,33 @@ export const columns: ColumnDef<Transaction>[] = [
         </Badge>
       );
     },
-    filterFn: (row, id, value: string[]) => {
-      return value.includes(row.getValue(id));
-    },
   },
   {
-    accessorKey: "subscription_id",
-    header: "Subscription ID",
+    accessorKey: "normalized_card_brand",
+    header: "Card Brand",
     cell: ({ row }) => (
-      <span className="font-mono text-sm">
-        {row.getValue("subscription_id") || "-"}
-      </span>
+      <span className="text-sm">{row.getValue("normalized_card_brand") || "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "card_holder_name",
+    header: "Card Holder",
+    cell: ({ row }) => (
+      <span className="text-sm">{row.getValue("card_holder_name") || "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "bin",
+    header: "BIN",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">{row.getValue("bin") || "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "last_4",
+    header: "Last 4",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">{row.getValue("last_4") || "-"}</span>
     ),
   },
   {
@@ -181,15 +276,33 @@ export const columns: ColumnDef<Transaction>[] = [
     header: "Payment Date",
     cell: ({ row }) => (
       <span className="text-sm">
-        {formatDate(row.getValue("payment_date"))}
+        {formatDateOnly(row.getValue("payment_date"))}
       </span>
     ),
   },
   {
-    accessorKey: "created_at",
-    header: "Created",
+    accessorKey: "next_transaction_date",
+    header: "Next Transaction",
     cell: ({ row }) => (
-      <span className="text-sm">{formatDate(row.getValue("created_at"))}</span>
+      <span className="text-sm">
+        {formatDateOnly(row.getValue("next_transaction_date"))}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "refund_date",
+    header: "Refund Date",
+    cell: ({ row }) => (
+      <span className="text-sm">
+        {formatDateOnly(row.getValue("refund_date"))}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "updated_at",
+    header: "Updated At",
+    cell: ({ row }) => (
+      <span className="text-sm">{formatDate(row.getValue("updated_at"))}</span>
     ),
   },
 ];
